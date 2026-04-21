@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Huffman Encoding Simulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #18181f;
+    --border: #2a2a38;
+    --border2: #353548;
+    --text: #e8e8f0;
+    --text2: #8888aa;
+    --text3: #555570;
+    --accent: #5f6fff;
+    --accent2: #8b5cf6;
+    --green: #22d3a0;
+    --amber: #f59e0b;
+    --red: #f87171;
+    --node-internal: #1e2040;
+    --node-leaf: #0f2e1e;
+    --node-internal-border: #5f6fff;
+    --node-leaf-border: #22d3a0;
+    --edge: #2a2a48;
+    --zero-color: #5f6fff;
+    --one-color: #22d3a0;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Grid background ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── Header ── */
+  header {
+    padding: 48px 0 40px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+
+  .header-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .25em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  header h1 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: clamp(24px, 5vw, 42px);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    background: linear-gradient(135deg, #e8e8f0 30%, #5f6fff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  header p {
+    margin-top: 10px;
+    color: var(--text2);
+    font-size: 14px;
+    max-width: 520px;
+    line-height: 1.6;
+  }
+
+  /* ── Card ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .card + .card { margin-top: 20px; }
+
+  .card-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .card-header-icon {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+  }
+
+  .card-header h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: .05em;
+    color: var(--text);
+  }
+
+  .card-header .badge {
+    margin-left: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--text3);
+    letter-spacing: .05em;
+  }
+
+  .card-body { padding: 24px; }
+
+  /* ── Input section ── */
+  .input-group {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .input-wrap {
+    flex: 1;
+    min-width: 220px;
+    position: relative;
+  }
+
+  .input-wrap label {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .input-wrap input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+
+  .input-wrap input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(95,111,255,.15);
+  }
+
+  .input-wrap input::placeholder { color: var(--text3); }
+
+  .btn-group {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 12px 22px;
+    border-radius: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: .06em;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .btn-primary:hover { background: #4a5aee; box-shadow: 0 4px 20px rgba(95,111,255,.35); }
+  .btn-primary:active { transform: scale(.97); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text2);
+    border-color: var(--border2);
+  }
+  .btn-ghost:hover { background: var(--surface2); color: var(--text); }
+  .btn-ghost:active { transform: scale(.97); }
+
+  /* ── Stats row ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-top: 0;
+  }
+
+  .stat-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+  }
+
+  .stat-card .stat-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .stat-card .stat-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .stat-card .stat-value.green { color: var(--green); }
+  .stat-card .stat-value.accent { color: var(--accent); }
+  .stat-card .stat-value.amber { color: var(--amber); }
+
+  /* ── Frequency table ── */
+  .freq-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .freq-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: border-color .2s;
+  }
+
+  .freq-item:hover { border-color: var(--border2); }
+
+  .freq-char {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--accent);
+    min-width: 20px;
+    text-align: center;
+  }
+
+  .freq-bar-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .freq-count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text2);
+  }
+
+  .freq-bar {
+    height: 3px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    min-width: 4px;
+    transition: width .4s cubic-bezier(.4,0,.2,1);
+  }
+
+  /* ── Steps ── */
+  .steps-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 360px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border2) transparent;
+  }
+
+  .step-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    animation: fadeSlideIn .3s ease both;
+  }
+
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    min-width: 28px;
+    padding-top: 2px;
+  }
+
+  .step-content {
+    flex: 1;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text2);
+  }
+
+  .step-content .hi { color: var(--accent); font-weight: 500; }
+  .step-content .hi2 { color: var(--green); font-weight: 500; }
+
+  .step-queue {
+    margin-top: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .queue-node {
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 5px;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text2);
+  }
+
+  .queue-node.merged {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* ── Tree SVG ── */
+  #tree-container {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 8px 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border2) transparent;
+  }
+
+  #tree-svg {
+    display: block;
+    margin: 0 auto;
+    overflow: visible;
+  }
+
+  .tree-edge {
+    stroke: var(--edge);
+    stroke-width: 1.5;
+    fill: none;
+  }
+
+  .edge-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  /* ── Code table ── */
+  .code-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+  }
+
+  .code-table thead tr {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .code-table th {
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 10px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--text3);
+    font-weight: 500;
+  }
+
+  .code-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background .12s;
+  }
+
+  .code-table tbody tr:last-child { border-bottom: none; }
+  .code-table tbody tr:hover { background: var(--surface2); }
+
+  .code-table td {
+    padding: 11px 16px;
+    color: var(--text2);
+  }
+
+  .code-table td.char-cell {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+    width: 60px;
+  }
+
+  .code-cell {
+    display: flex;
+    gap: 2px;
+  }
+
+  .bit-0 {
+    color: var(--zero-color);
+    font-weight: 600;
+  }
+
+  .bit-1 {
+    color: var(--one-color);
+    font-weight: 600;
+  }
+
+  .code-len {
+    color: var(--text3);
+    font-size: 12px;
+  }
+
+  /* ── Encoded output ── */
+  .encoded-wrap {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    line-height: 1.9;
+    word-break: break-all;
+    max-height: 220px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border2) transparent;
+  }
+
+  .enc-group {
+    display: inline;
+    cursor: default;
+    border-radius: 2px;
+    padding: 0 1px;
+    transition: background .1s;
+  }
+
+  .enc-group:hover {
+    background: rgba(95,111,255,.25);
+    outline: 1px solid var(--accent);
+    border-radius: 3px;
+  }
+
+  .enc-bit-0 { color: var(--zero-color); }
+  .enc-bit-1 { color: var(--one-color); }
+
+  /* ── Divider ── */
+  .section-gap { margin-top: 20px; }
+
+  /* ── Empty state ── */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 40px;
+    color: var(--text3);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .empty-state .icon { font-size: 28px; opacity: .4; }
+
+  /* ── Decode section ── */
+  .decode-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+
+  .decode-input {
+    flex: 1;
+    min-width: 200px;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .decode-input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(34,211,160,.12); }
+
+  #decode-result {
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--green);
+    display: none;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 600px) {
+    header { padding: 32px 0 28px; }
+    .card-body { padding: 16px; }
+    .input-group { flex-direction: column; }
+    .btn-group { width: 100%; }
+    .btn { flex: 1; text-align: center; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="header-label">// Algorithm Visualizer</div>
+    <h1>Huffman Encoding<br>Simulator</h1>
+    <p>Enter a string to compute optimal prefix-free binary codes, visualize the Huffman tree, and measure compression.</p>
+  </header>
+
+  <!-- INPUT -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-header-icon">⌨</div>
+      <h2>INPUT</h2>
+    </div>
+    <div class="card-body">
+      <div class="input-group">
+        <div class="input-wrap">
+          <label>String to encode</label>
+          <input type="text" id="inputStr" placeholder="e.g. abracadabra" value="abracadabra">
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="run()">Generate Encoding</button>
+          <button class="btn btn-ghost" onclick="reset()">Reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="card section-gap" id="statsCard" style="display:none">
+    <div class="card-header">
+      <div class="card-header-icon">◈</div>
+      <h2>STATISTICS</h2>
+    </div>
+    <div class="card-body">
+      <div class="stats-row" id="statsRow"></div>
+    </div>
+  </div>
+
+  <!-- FREQUENCY -->
+  <div class="card section-gap" id="freqCard" style="display:none">
+    <div class="card-header">
+      <div class="card-header-icon">≡</div>
+      <h2>FREQUENCY TABLE</h2>
+      <span class="badge" id="freqBadge"></span>
+    </div>
+    <div class="card-body">
+      <div class="freq-grid" id="freqGrid"></div>
+    </div>
+  </div>
+
+  <!-- BUILD STEPS -->
+  <div class="card section-gap" id="stepsCard" style="display:none">
+    <div class="card-header">
+      <div class="card-header-icon">⟳</div>
+      <h2>MERGE STEPS</h2>
+      <span class="badge" id="stepsBadge"></span>
+    </div>
+    <div class="card-body">
+      <div class="steps-list" id="stepsList"></div>
+    </div>
+  </div>
+
+  <!-- TREE -->
+  <div class="card section-gap" id="treeCard" style="display:none">
+    <div class="card-header">
+      <div class="card-header-icon">⊕</div>
+      <h2>HUFFMAN TREE</h2>
+      <span class="badge">LEFT = 0 &nbsp;|&nbsp; RIGHT = 1</span>
+    </div>
+    <div class="card-body" style="padding:16px">
+      <div id="tree-container"></div>
+    </div>
+  </div>
+
+  <!-- CODE TABLE -->
+  <div class="card section-gap" id="codeCard" style="display:none">
+    <div class="card-header">
+      <div class="card-header-icon">⟁</div>
+      <h2>CHARACTER CODES</h2>
+    </div>
+    <div class="card-body" style="padding:0">
+      <table class="code-table">
+        <thead>
+          <tr>
+            <th>Char</th>
+            <th>Freq</th>
+            <th>Code</th>
+            <th>Bits</th>
+          </tr>
+        </thead>
+        <tbody id="codeTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ENCODED OUTPUT -->
+  <div class="card section-gap" id="encCard" style="display:none">
+    <div class="card-header">
+      <div class="card-header-icon">▶</div>
+      <h2>ENCODED BINARY OUTPUT</h2>
+      <span class="badge" id="encBadge"></span>
+    </div>
+    <div class="card-body">
+      <p style="font-size:12px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-bottom:12px">Hover over groups to identify characters.</p>
+      <div class="encoded-wrap" id="encodedOut"></div>
+      <div style="margin-top:20px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">Decode binary string</div>
+        <div class="decode-row">
+          <input class="decode-input" id="decodeInput" placeholder="Paste binary string and click decode…">
+          <button class="btn btn-ghost" onclick="decode()">Decode ↵</button>
+        </div>
+        <div id="decode-result"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════
+   HUFFMAN ENCODING SIMULATOR — vanilla JavaScript
+   ════════════════════════════════════════════════════════ */
+
+// ── Global state ─────────────────────────────────────────
+let huffCodes = {};      // char → binary string
+let huffRoot  = null;    // root of Huffman tree
+let buildLog  = [];      // step-by-step merge log
+
+// ─────────────────────────────────────────────────────────
+// buildFrequencyMap(str)
+//   Returns an object { char: count } sorted by frequency desc.
+// ─────────────────────────────────────────────────────────
+function buildFrequencyMap(str) {
+  const freq = {};
+  for (const ch of str) {
+    freq[ch] = (freq[ch] || 0) + 1;
+  }
+  return freq;
+}
+
+// ─────────────────────────────────────────────────────────
+// MinHeap — priority queue keyed by node.freq
+// ─────────────────────────────────────────────────────────
+class MinHeap {
+  constructor() { this.heap = []; }
+
+  insert(node) {
+    this.heap.push(node);
+    this._bubbleUp(this.heap.length - 1);
+  }
+
+  extractMin() {
+    if (this.heap.length === 1) return this.heap.pop();
+    const min = this.heap[0];
+    this.heap[0] = this.heap.pop();
+    this._sinkDown(0);
+    return min;
+  }
+
+  _bubbleUp(i) {
+    while (i > 0) {
+      const parent = (i - 1) >> 1;
+      if (this.heap[parent].freq <= this.heap[i].freq) break;
+      [this.heap[parent], this.heap[i]] = [this.heap[i], this.heap[parent]];
+      i = parent;
+    }
+  }
+
+  _sinkDown(i) {
+    const n = this.heap.length;
+    while (true) {
+      let smallest = i;
+      const l = 2 * i + 1, r = 2 * i + 2;
+      if (l < n && this.heap[l].freq < this.heap[smallest].freq) smallest = l;
+      if (r < n && this.heap[r].freq < this.heap[smallest].freq) smallest = r;
+      if (smallest === i) break;
+      [this.heap[smallest], this.heap[i]] = [this.heap[i], this.heap[smallest]];
+      i = smallest;
+    }
+  }
+
+  get size() { return this.heap.length; }
+  snapshot() { return [...this.heap].sort((a,b) => a.freq - b.freq); }
+}
+
+// ─────────────────────────────────────────────────────────
+// buildHuffmanTree(freqMap)
+//   Builds the Huffman tree via repeated min-heap merges.
+//   Returns the root node and populates buildLog.
+// ─────────────────────────────────────────────────────────
+function buildHuffmanTree(freqMap) {
+  buildLog = [];
+  const heap = new MinHeap();
+
+  // Seed heap with leaf nodes
+  for (const [ch, freq] of Object.entries(freqMap)) {
+    heap.insert({ char: ch, freq, left: null, right: null });
+  }
+
+  // Initial queue snapshot
+  buildLog.push({
+    type: 'init',
+    queue: heap.snapshot()
+  });
+
+  let step = 1;
+  while (heap.size > 1) {
+    const left  = heap.extractMin();
+    const right = heap.extractMin();
+
+    const merged = {
+      char: null,
+      freq: left.freq + right.freq,
+      left,
+      right
+    };
+
+    heap.insert(merged);
+
+    buildLog.push({
+      type: 'merge',
+      step,
+      left,
+      right,
+      merged,
+      queue: heap.snapshot()
+    });
+
+    step++;
+  }
+
+  return heap.extractMin();
+}
+
+// ─────────────────────────────────────────────────────────
+// generateCodes(node, prefix, codes)
+//   DFS traversal: left edge = '0', right edge = '1'.
+//   Leaf nodes store the accumulated prefix as their code.
+// ─────────────────────────────────────────────────────────
+function generateCodes(node, prefix = '', codes = {}) {
+  if (!node) return codes;
+
+  if (node.char !== null) {
+    // Leaf node — assign the accumulated binary string
+    codes[node.char] = prefix || '0';  // handle single-symbol edge case
+    return codes;
+  }
+
+  generateCodes(node.left,  prefix + '0', codes);
+  generateCodes(node.right, prefix + '1', codes);
+  return codes;
+}
+
+// ─────────────────────────────────────────────────────────
+// encodeText(str, codes)
+//   Replaces each character with its Huffman code.
+// ─────────────────────────────────────────────────────────
+function encodeText(str, codes) {
+  return str.split('').map(ch => codes[ch]).join('');
+}
+
+// ─────────────────────────────────────────────────────────
+// decodeText(bits, root)
+//   Walk the tree bit by bit; emit char on each leaf arrival.
+// ─────────────────────────────────────────────────────────
+function decodeText(bits, root) {
+  if (!root) return '';
+
+  // Validate input (only 0 and 1 allowed)
+  if (!/^[01]+$/.test(bits)) {
+    return '⚠ Only binary input (0/1) allowed';
+  }
+
+  // Special case: single character tree
+  if (root.char !== null) {
+    return root.char.repeat(bits.length);
+  }
+
+  let node = root;
+  let out = '';
+
+  for (let i = 0; i < bits.length; i++) {
+    const b = bits[i];
+
+    if (b === '0') {
+  node = node.left;
+} else if (b === '1') {
+  node = node.right;
+} else {
+  return '⚠ Invalid character in input';
+}
+
+if (!node) return '⚠ Invalid bit sequence';
+    // If leaf node → append char and reset
+    if (node.char !== null) {
+      out += node.char;
+      node = root;
+    }
+  }
+
+  // 🔴 IMPORTANT: Check if ended properly
+  if (node !== root) {
+    return '⚠ Incomplete bit sequence';
+  }
+
+  return out;
+}
+
+// ─────────────────────────────────────────────────────────
+// run()  — main entry point
+// ─────────────────────────────────────────────────────────
+function run() {
+  const str = document.getElementById('inputStr').value;
+  if (!str) return;
+
+  // Compute
+  const freq     = buildFrequencyMap(str);
+  huffRoot       = buildHuffmanTree(freq);
+  huffCodes      = generateCodes(huffRoot);
+  const encoded  = encodeText(str, huffCodes);
+
+  // Render
+  renderStats(str, encoded, freq);
+  renderFreq(freq, str.length);
+  renderSteps();
+  renderTree(huffRoot);
+  renderCodes(freq);
+  renderEncoded(str, encoded);
+
+  // Show cards
+  ['statsCard','freqCard','stepsCard','treeCard','codeCard','encCard']
+    .forEach((id, i) => {
+      const el = document.getElementById(id);
+      el.style.display = '';
+      el.style.animationDelay = `${i * 60}ms`;
+      el.classList.add('fadeSlideIn');
+    });
+}
+
+// ─────────────────────────────────────────────────────────
+// reset()
+// ─────────────────────────────────────────────────────────
+function reset() {
+  document.getElementById('inputStr').value = '';
+  huffCodes = {}; huffRoot = null; buildLog = [];
+  ['statsCard','freqCard','stepsCard','treeCard','codeCard','encCard']
+    .forEach(id => document.getElementById(id).style.display = 'none');
+  document.getElementById('decode-result').style.display = 'none';
+}
+
+// ─────────────────────────────────────────────────────────
+// decode()
+// ─────────────────────────────────────────────────────────
+function decode() {
+  const bits = document.getElementById('decodeInput').value.trim();
+  const res  = document.getElementById('decode-result');
+
+  if (!huffRoot) {
+    res.style.display = '';
+    res.textContent = '⚠ Generate encoding first';
+    return;
+  }
+
+  if (!bits) {
+    res.style.display = '';
+    res.textContent = '⚠ Enter a binary string';
+    return;
+  }
+
+  // 🚨 DEBUG LOG (important)
+  console.log("Current Codes:", huffCodes);
+  console.log("Input Bits:", bits);
+
+  const text = decodeText(bits, huffRoot);
+
+  res.style.display = '';
+  res.textContent = '→ ' + text;
+}
+
+// ═══════════════════════════════════════════════════════
+//  RENDER FUNCTIONS
+// ═══════════════════════════════════════════════════════
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function displayChar(ch) {
+  if (ch === ' ')  return '␣';
+  if (ch === '\n') return '↵';
+  if (ch === '\t') return '⇥';
+  return escHtml(ch);
+}
+
+// ── Stats ──────────────────────────────────────────────
+function renderStats(str, encoded, freq) {
+  const origBits  = str.length * 8;
+  const huffBits  = encoded.length;
+  const ratio     = ((1 - huffBits / origBits) * 100).toFixed(1);
+  const uniqueChars = Object.keys(freq).length;
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Input Length</div>
+      <div class="stat-value">${str.length} <span style="font-size:13px;color:var(--text3)">chars</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Unique Symbols</div>
+      <div class="stat-value accent">${uniqueChars}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">ASCII bits</div>
+      <div class="stat-value">${origBits}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Huffman bits</div>
+      <div class="stat-value accent">${huffBits}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Compression</div>
+      <div class="stat-value ${parseFloat(ratio) > 0 ? 'green' : 'amber'}">${ratio}%</div>
+    </div>
+  `;
+}
+
+// ── Frequency grid ─────────────────────────────────────
+function renderFreq(freq, total) {
+  const sorted = Object.entries(freq).sort((a,b) => b[1] - a[1]);
+  const maxF   = sorted[0][1];
+
+  document.getElementById('freqBadge').textContent = `${sorted.length} symbols`;
+  document.getElementById('freqGrid').innerHTML = sorted.map(([ch, f]) => `
+    <div class="freq-item">
+      <div class="freq-char">${displayChar(ch)}</div>
+      <div class="freq-bar-wrap">
+        <div class="freq-count">×${f} &nbsp;(${((f/total)*100).toFixed(1)}%)</div>
+        <div class="freq-bar" style="width:${Math.max(16, (f/maxF)*80)}px"></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Merge steps ────────────────────────────────────────
+function renderSteps() {
+  document.getElementById('stepsBadge').textContent = `${buildLog.length - 1} merges`;
+  const list = document.getElementById('stepsList');
+  list.innerHTML = '';
+
+  buildLog.forEach((entry, idx) => {
+    const el = document.createElement('div');
+    el.className = 'step-item';
+    el.style.animationDelay = `${idx * 30}ms`;
+
+    if (entry.type === 'init') {
+      const queueHTML = entry.queue.map(n =>
+        `<span class="queue-node">${n.char ? displayChar(n.char) : '⊕'}:${n.freq}</span>`
+      ).join('');
+      el.innerHTML = `
+        <div class="step-num">init</div>
+        <div class="step-content">
+          <span style="color:var(--text)">Initial priority queue</span>
+          <div class="step-queue">${queueHTML}</div>
+        </div>`;
+    } else {
+      const lName = entry.left.char  ? displayChar(entry.left.char)  : '⊕';
+      const rName = entry.right.char ? displayChar(entry.right.char) : '⊕';
+      const queueHTML = entry.queue.map(n =>
+        `<span class="queue-node ${n === entry.merged ? 'merged' : ''}">${n.char ? displayChar(n.char) : '⊕'}:${n.freq}</span>`
+      ).join('');
+      el.innerHTML = `
+        <div class="step-num">#${entry.step}</div>
+        <div class="step-content">
+          Merge <span class="hi">${lName}:${entry.left.freq}</span> + <span class="hi">${rName}:${entry.right.freq}</span>
+          → <span class="hi2">⊕:${entry.merged.freq}</span>
+          <div class="step-queue">${queueHTML}</div>
+        </div>`;
+    }
+
+    list.appendChild(el);
+  });
+}
+
+// ── Code table ─────────────────────────────────────────
+function renderCodes(freq) {
+  const sorted = Object.entries(huffCodes).sort((a,b) => a[1].length - b[1].length || a[0].localeCompare(b[0]));
+  document.getElementById('codeTbody').innerHTML = sorted.map(([ch, code]) => {
+    const bits = code.split('').map(b =>
+      `<span class="bit-${b}">${b}</span>`
+    ).join('');
+    return `<tr>
+      <td class="char-cell">${displayChar(ch)}</td>
+      <td style="color:var(--text3)">${freq[ch]}</td>
+      <td><div class="code-cell">${bits}</div></td>
+      <td class="code-len">${code.length}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Encoded output ──────────────────────────────────────
+function renderEncoded(str, encoded) {
+  document.getElementById('encBadge').textContent = `${encoded.length} bits`;
+  document.getElementById('encodedOut').innerHTML = str.split('').map(ch => {
+    const code = huffCodes[ch];
+    const bits = code.split('').map(b =>
+      `<span class="enc-bit-${b}">${b}</span>`
+    ).join('');
+    return `<span class="enc-group" title="${displayChar(ch)} → ${code}">${bits}</span>`;
+  }).join('<span style="color:var(--text3);user-select:none"> </span>');
+
+  document.getElementById('decodeInput').value = encoded;
+}
+
+// ── Tree SVG ────────────────────────────────────────────
+function renderTree(root) {
+  const NODE_W   = 54;
+  const NODE_H   = 30;
+  const H_GAP    = 20;   // horizontal gap between subtrees
+  const V_GAP    = 54;   // vertical gap between levels
+
+  // Compute layout: assign x (leaf index), y (depth)
+  let leafIdx = 0;
+
+  function layout(node, depth) {
+    node._depth = depth;
+    if (!node.left && !node.right) {
+      node._x = leafIdx++ * (NODE_W + H_GAP);
+      return;
+    }
+    layout(node.left,  depth + 1);
+    layout(node.right, depth + 1);
+    node._x = (node.left._x + node.right._x) / 2;
+  }
+
+  layout(root, 0);
+
+  const svgW = Math.max(leafIdx * (NODE_W + H_GAP) + NODE_W, 300);
+  const depth = getTreeDepth(root);
+  const svgH = depth * V_GAP + NODE_H + 20;
+
+  function cx(node) { return node._x + NODE_W / 2; }
+  function cy(node) { return node._depth * V_GAP + NODE_H / 2 + 10; }
+
+  // Build SVG elements
+  let edges = '', nodes = '';
+
+  function draw(node) {
+    const x = node._x, y = node._depth * V_GAP + 10;
+    const isLeaf = node.char !== null;
+
+    // Draw edges to children
+    if (node.left) {
+      const lx2 = cx(node.left), ly2 = cy(node.left);
+      const x1 = cx(node), y1 = cy(node);
+      edges += `<line x1="${x1}" y1="${y1}" x2="${lx2}" y2="${ly2}" class="tree-edge"/>`;
+      // "0" label on left edge midpoint
+      const mx = (x1 + lx2) / 2 - 10, my = (y1 + ly2) / 2;
+      edges += `<text x="${mx}" y="${my}" class="edge-label" fill="var(--zero-color)">0</text>`;
+    }
+    if (node.right) {
+      const rx2 = cx(node.right), ry2 = cy(node.right);
+      const x1 = cx(node), y1 = cy(node);
+      edges += `<line x1="${x1}" y1="${y1}" x2="${rx2}" y2="${ry2}" class="tree-edge"/>`;
+      // "1" label on right edge midpoint
+      const mx = (x1 + rx2) / 2 + 4, my = (y1 + ry2) / 2;
+      edges += `<text x="${mx}" y="${my}" class="edge-label" fill="var(--one-color)">1</text>`;
+    }
+
+    // Node rectangle
+    const fill   = isLeaf ? 'var(--node-leaf)'     : 'var(--node-internal)';
+    const stroke = isLeaf ? 'var(--node-leaf-border)' : 'var(--node-internal-border)';
+    const label  = isLeaf ? displayChar(node.char) : '⊕';
+    const freqLabelY = y + NODE_H + 13;
+
+    nodes += `
+      <rect x="${x}" y="${y}" width="${NODE_W}" height="${NODE_H}"
+            rx="7" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>
+      <text x="${x + NODE_W/2}" y="${y + NODE_H/2}" text-anchor="middle"
+            dominant-baseline="central"
+            font-family="IBM Plex Mono, monospace"
+            font-size="${isLeaf ? 14 : 11}" font-weight="600"
+            fill="${isLeaf ? 'var(--green)' : 'var(--accent)'}">
+        ${label}
+      </text>
+      <text x="${x + NODE_W/2}" y="${freqLabelY}" text-anchor="middle"
+            font-family="IBM Plex Mono, monospace" font-size="10"
+            fill="var(--text3)">${node.freq}</text>
+    `;
+
+    if (node.left)  draw(node.left);
+    if (node.right) draw(node.right);
+  }
+
+  draw(root);
+
+  const svg = `
+    <svg id="tree-svg" width="${svgW}" height="${svgH + 16}"
+         viewBox="0 0 ${svgW} ${svgH + 16}" xmlns="http://www.w3.org/2000/svg">
+      ${edges}
+      ${nodes}
+    </svg>`;
+
+  document.getElementById('tree-container').innerHTML = svg;
+}
+
+function getTreeDepth(node) {
+  if (!node) return 0;
+  return 1 + Math.max(getTreeDepth(node.left), getTreeDepth(node.right));
+}
+
+// ── Run on load with default value ──────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('inputStr').addEventListener('keydown', e => {
+    if (e.key === 'Enter') run();
+  });
+  run();
+});
+</script>
+</body>
+</html>
