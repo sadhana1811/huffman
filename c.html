@@ -586,7 +586,7 @@
       <div class="input-group">
         <div class="input-wrap">
           <label>String to encode</label>
-          <input type="text" id="inputStr" placeholder="e.g. abracadabra" value="abracadabra">
+          <input type="text" id="inputStr" placeholder="e.g. abracadabra">
         </div>
         <div class="btn-group">
           <button class="btn btn-primary" onclick="run()">Generate Encoding</button>
@@ -671,16 +671,7 @@
       <h2>ENCODED BINARY OUTPUT</h2>
       <span class="badge" id="encBadge"></span>
     </div>
-    <!-- DECODE STEPS -->
-<div class="card section-gap" id="decodeStepsCard" style="display:none">
-  <div class="card-header">
-    <div class="card-header-icon">⇢</div>
-    <h2>DECODING STEPS</h2>
-  </div>
-  <div class="card-body">
-    <div class="steps-list" id="decodeStepsList"></div>
-  </div>
-</div>
+
     <div class="card-body">
       <p style="font-size:12px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-bottom:12px">Hover over groups to identify characters.</p>
       <div class="encoded-wrap" id="encodedOut"></div>
@@ -690,6 +681,16 @@
           <input class="decode-input" id="decodeInput" placeholder="Paste binary string and click decode…">
           <button class="btn btn-ghost" onclick="decode()">Decode ↵</button>
         </div>
+            <!-- DECODE STEPS -->
+<div class="card section-gap" id="decodeStepsCard" style="display:none">
+  <div class="card-header">
+    <div class="card-header-icon">⇢</div>
+    <h2>DECODING STEPS</h2>
+  </div>
+  <div class="card-body">
+    <div class="steps-list" id="decodeStepsList"></div>
+  </div>
+</div>
         <div id="decode-result"></div>
       </div>
     </div>
@@ -961,6 +962,15 @@ function renderDecodeSteps() {
 // run()  — main entry point
 // ─────────────────────────────────────────────────────────
 function run() {
+// CLEAR OLD DECODE STATE
+decodeLog = [];
+document.getElementById('decodeStepsList').innerHTML = '';
+document.getElementById('decodeStepsCard').style.display = 'none';
+
+const res = document.getElementById('decode-result');
+res.style.display = 'none';
+res.innerHTML = '';
+
   const str = document.getElementById('inputStr').value;
   if (!str) return;
 
@@ -1293,7 +1303,6 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('inputStr').addEventListener('keydown', e => {
     if (e.key === 'Enter') run();
   });
-  run();
 });
 </script>
 </body>
