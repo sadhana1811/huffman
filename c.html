@@ -671,6 +671,16 @@
       <h2>ENCODED BINARY OUTPUT</h2>
       <span class="badge" id="encBadge"></span>
     </div>
+    <!-- DECODE STEPS -->
+<div class="card section-gap" id="decodeStepsCard" style="display:none">
+  <div class="card-header">
+    <div class="card-header-icon">⇢</div>
+    <h2>DECODING STEPS</h2>
+  </div>
+  <div class="card-body">
+    <div class="steps-list" id="decodeStepsList"></div>
+  </div>
+</div>
     <div class="card-body">
       <p style="font-size:12px;color:var(--text3);font-family:'IBM Plex Mono',monospace;margin-bottom:12px">Hover over groups to identify characters.</p>
       <div class="encoded-wrap" id="encodedOut"></div>
@@ -696,7 +706,7 @@
 let huffCodes = {};      // char → binary string
 let huffRoot  = null;    // root of Huffman tree
 let buildLog  = [];      // step-by-step merge log
-
+let decodeLog = [];   // NEW: store decoding steps
 // ─────────────────────────────────────────────────────────
 // buildFrequencyMap(str)
 //   Returns an object { char: count } sorted by frequency desc.
@@ -835,48 +845,118 @@ function encodeText(str, codes) {
 //   Walk the tree bit by bit; emit char on each leaf arrival.
 // ─────────────────────────────────────────────────────────
 function decodeText(bits, root) {
+  decodeLog = [];   // reset log
+
   if (!root) return '';
 
-  // Validate input (only 0 and 1 allowed)
   if (!/^[01]+$/.test(bits)) {
     return '⚠ Only binary input (0/1) allowed';
   }
 
-  // Special case: single character tree
   if (root.char !== null) {
+    decodeLog.push({
+      action: 'single-node',
+      char: root.char,
+      repeat: bits.length
+    });
     return root.char.repeat(bits.length);
   }
 
   let node = root;
   let out = '';
+  let currentPath = '';
 
   for (let i = 0; i < bits.length; i++) {
     const b = bits[i];
+    currentPath += b;
 
-    if (b === '0') {
-  node = node.left;
-} else if (b === '1') {
-  node = node.right;
-} else {
-  return '⚠ Invalid character in input';
-}
+    if (b === '0') node = node.left;
+    else if (b === '1') node = node.right;
 
-if (!node) return '⚠ Invalid bit sequence';
-    // If leaf node → append char and reset
+    if (!node) {
+      decodeLog.push({
+        action: 'error',
+        bit: b,
+        index: i
+      });
+      return '⚠ Invalid bit sequence';
+    }
+
+    decodeLog.push({
+      action: 'move',
+      bit: b,
+      index: i,
+      path: currentPath
+    });
+
+    // reached leaf
     if (node.char !== null) {
+      decodeLog.push({
+        action: 'output',
+        char: node.char,
+        path: currentPath
+      });
+
       out += node.char;
       node = root;
+      currentPath = '';
     }
   }
 
-  // 🔴 IMPORTANT: Check if ended properly
   if (node !== root) {
+    decodeLog.push({ action: 'incomplete' });
     return '⚠ Incomplete bit sequence';
   }
-  console.log("Decoding bits:", bits);
+
   return out;
 }
+function renderDecodeSteps() {
+  const list = document.getElementById('decodeStepsList');
+  list.innerHTML = '';
 
+  decodeLog.forEach((step, i) => {
+    const el = document.createElement('div');
+    el.className = 'step-item';
+
+    if (step.action === 'move') {
+      el.innerHTML = `
+        <div class="step-num">#${i+1}</div>
+        <div class="step-content">
+          Read bit <span class="hi">${step.bit}</span> → move along path 
+          <span class="hi2">${step.path}</span>
+        </div>`;
+    }
+
+    else if (step.action === 'output') {
+      el.innerHTML = `
+        <div class="step-num">#${i+1}</div>
+        <div class="step-content">
+          Reached leaf → output <span class="hi2">'${displayChar(step.char)}'</span>
+          (path: ${step.path})
+        </div>`;
+    }
+
+    else if (step.action === 'error') {
+      el.innerHTML = `
+        <div class="step-num">⚠</div>
+        <div class="step-content">
+          Invalid traversal at bit index ${step.index}
+        </div>`;
+    }
+
+    else if (step.action === 'incomplete') {
+      el.innerHTML = `
+        <div class="step-num">⚠</div>
+        <div class="step-content">
+          Incomplete bit sequence — did not end at root
+        </div>`;
+    }
+
+    list.appendChild(el);
+  });
+
+  document.getElementById('decodeStepsCard').style.display = '';
+}
 // ─────────────────────────────────────────────────────────
 // run()  — main entry point
 // ─────────────────────────────────────────────────────────
@@ -912,11 +992,37 @@ function run() {
 // reset()
 // ─────────────────────────────────────────────────────────
 function reset() {
+  // Clear input
   document.getElementById('inputStr').value = '';
-  huffCodes = {}; huffRoot = null; buildLog = [];
-  ['statsCard','freqCard','stepsCard','treeCard','codeCard','encCard']
-    .forEach(id => document.getElementById(id).style.display = 'none');
-  document.getElementById('decode-result').style.display = 'none';
+
+  // Reset state
+  huffCodes = {};
+  huffRoot = null;
+  buildLog = [];
+  decodeLog = [];
+
+  // Hide all cards
+  [
+    'statsCard','freqCard','stepsCard',
+    'treeCard','codeCard','encCard','decodeStepsCard'
+  ].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+
+  // Clear dynamic content
+  document.getElementById('freqGrid').innerHTML = '';
+  document.getElementById('stepsList').innerHTML = '';
+  document.getElementById('tree-container').innerHTML = '';
+  document.getElementById('codeTbody').innerHTML = '';
+  document.getElementById('encodedOut').innerHTML = '';
+  document.getElementById('decodeStepsList').innerHTML = '';
+
+  // Clear decode section
+  document.getElementById('decodeInput').value = '';
+  const res = document.getElementById('decode-result');
+  res.style.display = 'none';
+  res.innerHTML = '';
 }
 
 // ─────────────────────────────────────────────────────────
@@ -939,7 +1045,7 @@ function decode() {
   }
 setTimeout(() => {
   const text = decodeText(bits, huffRoot);
-
+  renderDecodeSteps();
   console.log("Decoded:", text);
 
 res.innerHTML = `
